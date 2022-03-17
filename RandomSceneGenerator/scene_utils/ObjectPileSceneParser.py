@@ -4,8 +4,6 @@ import json
 import numpy as np
 from copy import deepcopy
 
-from scene_utils.TrimeshScene import ExtendedScene
-
 class SceneInfo:
     def __init__(self, data):
         self.cad_ids = data['cad_ids']
@@ -52,7 +50,7 @@ class ObjectPileSceneParser:
         unscaled_meshes = {}
         mesh_scales = {}
         exponents = {}
-        scene = ExtendedScene()
+        scene = trimesh.Scene()
         for i, (cad_id, scale, Ts_cad2cam) in enumerate(zip(
                 cad_ids, scales, Ts_cad2cams)):
             if cad_id_as_key:

@@ -60,9 +60,11 @@ def create_data_for_scene(i, per_instance_scene=False):
     tag = data_loader.data[i]["tag"]
     scene_dir = data_loader.data[i]['scene_file']
 
+    with open(os.path.join(scene_dir,"nbr_of_objects.txt")) as fp:
+        nbr_of_objects = int(fp.readline())
     # if all folders exist, skip
     all_folders = True
-    for j in range(6):
+    for j in range(nbr_of_objects):
         folder = os.path.join(scene_dir, "tsdf" + str(j) + ".npy")
         if not os.path.exists(folder):
             all_folders = False

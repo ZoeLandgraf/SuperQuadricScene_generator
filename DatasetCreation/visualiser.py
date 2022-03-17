@@ -87,7 +87,7 @@ if __name__ == "__main__":
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 
-    parser.add_argument('scene_dir', help='destination path to dataset')
+    parser.add_argument('--scene_dir', help='destination path to dataset', default="../examples/sample_data/")
 
     args = parser.parse_args()
 

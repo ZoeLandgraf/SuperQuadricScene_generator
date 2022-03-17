@@ -1,6 +1,6 @@
 # SuperQuadric scene generator
 Generates scenes of cluttered SuperQuadric shapes. 
-![title](example_image.png)
+![title](examples/example_image.png)
 
 
 ###Installation

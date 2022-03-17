@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-# This is borrowed from Kentaro's script
-
 import argparse
 import datetime
 import shutil
@@ -69,6 +67,10 @@ def generate_data(out, model_dir, random_state, connection_method, min_objects=4
     camera = extra.trimesh.OpenGLCamera(
         resolution=(640, 480), fovy=45
     )
+
+    # save number of objects in the file
+    with open(os.path.join(out/"nbr_of_objects.txt"), 'w') as fp:
+        fp.write(str(len(generator.unique_ids)))
 
     for index, T_cam2world in enumerate(Ts_cam2world):
         rgb, depth, instance_label, class_label = generator.render(
