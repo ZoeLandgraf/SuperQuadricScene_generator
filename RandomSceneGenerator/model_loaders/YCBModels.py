@@ -1,5 +1,6 @@
 import path
-from OtherRepos.morefusion.morefusion.datasets.base import ModelsBase
+from model_loaders.modelbase import ModelsBase
+
 class YCB_Models(ModelsBase):
 
     def __init__(self):

@@ -5,22 +5,22 @@ import time
 import path
 import numpy as np
 import os
+import argparse
+
 import warnings
 import multiprocessing
 import shutil
 from data_loader import PileLoader
 from scene_utils.TSDFScene import TSDFScene, create_tsdf_per_object
 
-path_to_scenes = "/media/zoe/ExtDrive/_3DObjectDiscovery/Data/sq_scenes/6_objects/test/"
-path_to_models = "/media/zoe/ExtDrive/_3DObjectDiscovery/Data/sq_models/2000_convex_models"
-data_loader = PileLoader(path_to_scenes=path_to_scenes, path_to_models=path_to_models, type="val")
-
 warnings.filterwarnings("ignore")
-
 
 def organise_folders(data_dir):
     total_folders = 0
     for el in os.listdir(data_dir):
+
+        if ".txt" in el:
+            continue
 
         scene_tag = el
 
@@ -42,8 +42,7 @@ def organise_folders(data_dir):
 
         #delete folder if it has not information, otherwise organise it
         if not (os.path.exists(scene_info) or os.path.exists(new_scene_info)):
-            print("deleting scene: ", scene_tag)
-            shutil.rmtree(str(path.Path(data_dir) / scene_tag ))
+            print("This folder doesn't look like it has the right content, skipping")
             continue
         elif not os.path.exists(new_scene_info):
             shutil.move(scene_info, new_scene_info)
@@ -57,7 +56,7 @@ def organise_folders(data_dir):
     print("number of valid folders: ", total_folders)
     time.sleep(2)
 
-def create_data_for_scene(i):
+def create_data_for_scene(i, per_instance_scene=False):
     tag = data_loader.data[i]["tag"]
     scene_dir = data_loader.data[i]['scene_file']
 
@@ -81,7 +80,7 @@ def create_data_for_scene(i):
 
     except:
         print(f"Issue with PyBullet scene: {os.path.basename(scene_dir)}")
-        print("deleting scene: ", scene_tag)
+        print("deleting scene: ", tag)
         shutil.rmtree(scene_dir)
         return
 
@@ -94,39 +93,54 @@ def create_data_for_scene(i):
 
     np.save(os.path.join(scene_dir, "scene_tsdf.npy"), tsdf)
 
-    # create individual tsdfs
-    # try:
-    per_object_tsdfs = create_tsdf_per_object(scene_dict)
-    # except:
-    #     print("problem creating individual tsdfs")
-    #     return
+    if per_instance_scene:
+        # create individual tsdfs
+        try:
+            per_object_tsdfs = create_tsdf_per_object(scene_dict)
+        except:
+            print("problem creating individual tsdfs")
+            return
 
-    for j in range(len(per_object_tsdfs)):
-        tsdf = per_object_tsdfs[j]
-        np.save(os.path.join(scene_dir, "tsdf" + str(j) + ".npy"), tsdf)
+        for j in range(len(per_object_tsdfs)):
+            tsdf = per_object_tsdfs[j]
+            np.save(os.path.join(scene_dir, "tsdf" + str(j) + ".npy"), tsdf)
 
 
-organise_folders(data_dir=data_loader.data_path)
-# create processes
-nbr_of_processes = 2
+if __name__ == "__main__":
 
-data_length = data_loader.__len__()
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
 
-a = time.time()
-for batch in range(0,data_length//nbr_of_processes):
-    index_start = batch*nbr_of_processes
-    processes = [multiprocessing.Process(target=create_data_for_scene, args=(i,)) for i in range(index_start,index_start+nbr_of_processes)]
-    [t.start() for t in processes]
-    [t.join() for t in processes]
+    parser.add_argument('scene_dir', help='destination path to dataset')
+    parser.add_argument('model_dir', help='path to SQ models')
+    parser.add_argument('--n_processes', type=int, help='multiprocessing: number of processes', default=1)
+    parser.add_argument('--per_instance_scene', type=bool, help='create per instance tsdf and voxelgrids')
 
-# complete remaining folders
-if (data_length % nbr_of_processes) != 0:
-    start =  data_length - (data_length//nbr_of_processes)*nbr_of_processes + 1
-    end = data_length
-    processes = [multiprocessing.Process(target=create_data_for_scene, args=(i,)) for i in
-                 range(start, end)]
-    [t.start() for t in processes]
-    [t.join() for t in processes]
+    args = parser.parse_args()
 
-b = time.time()
-print("time taken: " , b - a)
+    data_loader = PileLoader(path_to_scenes=args.scene_dir, path_to_models=args.model_dir)
+    organise_folders(data_dir=data_loader.data_path)
+    # create processes
+    nbr_of_processes = args.n_processes
+
+    data_length = data_loader.__len__()
+
+    a = time.time()
+    for batch in range(0,data_length//nbr_of_processes):
+        index_start = batch*nbr_of_processes
+        processes = [multiprocessing.Process(target=create_data_for_scene, args=(i,args.per_instance_scene)) for i in range(index_start,index_start+nbr_of_processes)]
+        [t.start() for t in processes]
+        [t.join() for t in processes]
+
+    # complete remaining folders
+    if (data_length % nbr_of_processes) != 0:
+        start =  data_length - (data_length//nbr_of_processes)*nbr_of_processes + 1
+        end = data_length
+        processes = [multiprocessing.Process(target=create_data_for_scene, args=(i,)) for i in
+                     range(start, end)]
+        [t.start() for t in processes]
+        [t.join() for t in processes]
+
+    b = time.time()
+    print("time taken: " , b - a)

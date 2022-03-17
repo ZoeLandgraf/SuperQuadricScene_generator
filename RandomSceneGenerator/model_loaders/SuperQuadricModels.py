@@ -1,13 +1,14 @@
 import re
 import gdown
 import path
-import morefusion
-from morefusion.datasets.base import ModelsBase
+from model_loaders.modelbase import ModelsBase
 
 class SuperQuadricModels(ModelsBase):
 
-    def __init__(self, filter_cad_ids=None):
-        self.data_dir = path.Path('/media/zoe/ExtDrive/SIMstack/Data/sq_models/2000_convex_models')
+    def __init__(self,
+                 data_dir,
+                 filter_cad_ids=None):
+        self.data_dir = path.Path(data_dir)
         self.filter_cad_ids = filter_cad_ids
 
     @property

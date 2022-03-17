@@ -1,6 +1,6 @@
 import numpy as np
 import scipy.spatial
-
+import scipy.interpolate
 
 def sort(points):
     assert points.ndim == 2, "points must be 2 dimensional"

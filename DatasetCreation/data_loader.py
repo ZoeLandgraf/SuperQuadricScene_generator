@@ -62,16 +62,14 @@ class PileLoader:
             self.Ts_cad2cams = data['Ts_cad2cam']
             self.Ts_cam2world = data['T_cam2world']
 
-    def __init__(self, path_to_scenes, path_to_models, type):
+    def __init__(self, path_to_scenes, path_to_models):
 
         self.path_to_models = path_to_models
         self.models = SuperQuadricModels(path_to_models)
 
-        type_to_folder = {"train":"training_data","val":"validation_data","test":"test_data"}
-
         # load all folders
         folder_list = []
-        folder = os.path.join(path_to_scenes, type_to_folder[type])
+        folder = path_to_scenes
         for el in os.listdir(folder):
             if not re.match(r'[0-9]', path.Path(el).basename()):
                 continue
@@ -208,3 +206,75 @@ class PileLoader:
         meshes, transforms = self.build_scene_from_dict(scene_dict)
 
         return {'meshes':meshes, "transforms": transforms}
+
+
+class VoxelGridLoader:
+    """
+
+    """
+    def __init__(self, path_to_scenes, max_n_objects):
+
+        # load all folders
+        folder_list = []
+        folder = path_to_scenes
+        for el in os.listdir(folder):
+            if not re.match(r'[0-9]', path.Path(el).basename()):
+                continue
+            folder_list.append(os.path.join(folder, el))
+
+        self.folder_list = folder_list
+        self.max_n_objects = max_n_objects
+
+    def __len__(self):
+        return len(self.folder_list)
+
+    def __getitem__(self, i):
+
+        folder = self.folder_list[i]
+
+        scene_file = os.path.join(folder, "scene_tsdf.npy")
+        if not os.path.exists(scene_file):
+            raise IOError(f"scene file {scene_file} doesn't exist")
+        # load scene tsdf and create scene occupancy grid
+        scene_tsdf = np.load(os.path.join(folder, "scene_tsdf.npy"))
+        scene_occ = np.zeros_like(scene_tsdf)
+        scene_occ[scene_tsdf < 0] = 1
+
+        tsdfs = []
+        occs = []
+        # extract number of objects
+        nbr_of_objects = 0;
+
+        while os.path.exists(os.path.join(folder, "tsdf" + str(nbr_of_objects) + ".npy")):
+            tsdf = np.load(os.path.join(folder, "tsdf" + str(nbr_of_objects) + ".npy"))
+            nbr_of_objects += 1
+            tsdfs.append(tsdf)
+            occ = np.zeros_like(tsdf)
+            occ[tsdf < 0] = 1
+            occs.append(occ)
+
+        sample = {"scene": torch.from_numpy(scene_tsdf).unsqueeze(0),
+                  "scene_occ": torch.from_numpy(scene_occ).unsqueeze(0)}
+
+        if nbr_of_objects > 0:
+            # concatenate tsdfs
+            concatenated_tsdfs = torch.cat([torch.from_numpy(el).unsqueeze(0) for el in tsdfs], dim=0)
+
+            # add empty scenes if necessary (for datasets with varying number of objects)
+            for i in range(self.max_n_objects - concatenated_tsdfs.shape[0]):
+                concatenated_tsdfs = torch.cat(
+                    [concatenated_tsdfs, torch.zeros_like(concatenated_tsdfs[0].unsqueeze(0))], dim=0)
+
+            # concatenate occs
+            concatenated_occs = torch.cat([torch.from_numpy(el).unsqueeze(0) for el in occs], dim=0)
+
+            # add empty scenes if necessary (for datasets with varying number of objects)
+            for i in range(self.max_n_objects - concatenated_occs.shape[0]):
+                concatenated_occs = torch.cat(
+                    [concatenated_occs, torch.zeros_like(concatenated_occs[0].unsqueeze(0))], dim=0)
+
+            sample.update({"concatenated_objects": concatenated_tsdfs,
+                      "concatenated_objects_occ": concatenated_occs,
+                      "nbr_of_objects": nbr_of_objects})
+
+        return sample

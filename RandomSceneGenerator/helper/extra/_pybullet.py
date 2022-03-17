@@ -14,7 +14,7 @@ def init_world(connection_method=None) -> None:
     import pybullet_data
 
     if connection_method is None:
-        connection_method = pybullet.GUI
+        connection_method = pybullet.DIRECT
     pybullet.connect(connection_method)
     pybullet.setAdditionalSearchPath(pybullet_data.getDataPath())
 

@@ -10,7 +10,8 @@ class SceneGenerationBase:
     def __init__(
         self,
         models,
-        n_object,
+        min_objects,
+        max_objects,
         *,
         random_state=None,
         class_weight=None,
@@ -20,7 +21,8 @@ class SceneGenerationBase:
         n_trial=100,
     ):
         self._models = models
-        self._n_object = n_object
+        self._n_object = max_objects
+        self.min_objects = min_objects
         if random_state is None:
             random_state = np.random.mtrand._rand
         self._random_state = random_state
@@ -98,11 +100,6 @@ class SceneGenerationBase:
         cad_id = self._random_state.choice(cad_ids, 1).item()
         cad_file = self._models.get_cad_file_from_id(cad_id=cad_id)
 
-        # termcolor.cprint(
-        #     f"==> Spawning a new object: class_id={class_id:04d}, cad_id={cad_id}",  # NOQA
-        #     attrs={"bold": True},
-        # )
-
         if self._mesh_scale is not None:
             mesh_scale = np.random.uniform(
                 self._mesh_scale[0], self._mesh_scale[1]
@@ -145,17 +142,12 @@ class SceneGenerationBase:
         )
         self.init_space()
 
-
         class_ids = self._random_state.choice(
             np.arange(0, self._models.n_class),
             self._n_object,
             replace=self._multi_instance,  # allow duplicates or not
             p=self._class_weight,
         )
-        # termcolor.cprint(
-        #     f"==> Selected Classes: {class_ids}", attrs={"bold": True}
-        # )
-
 
         for class_id in class_ids:
             self._spawn_object(class_id=class_id)
@@ -163,10 +155,10 @@ class SceneGenerationBase:
         self._simulate(nstep=10000)
 
         # set MINIMUM nbr of objects
-        if len(self._objects.keys()) < 6:
+        if len(self._objects.keys()) < self.min_objects:
             raise ValueError("invalid scene")
-
-        # termcolor.cprint("==> Finished scene generation", attrs={"bold": True})
+            print("Scene failed to generate")
+        print("Number of objects: ", len(self._objects.keys()))
 
 
     @property
