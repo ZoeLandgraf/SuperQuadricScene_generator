@@ -25,7 +25,7 @@ def generate_data(out, model_dir, random_state, connection_method, min_objects=4
     class_weight /= class_weight.sum()
 
     generator = plane_type.PlaneTypeSceneGeneration(
-        extents=(0.4, 0.4, 0.3),
+        extents=(0.45, 0.45, 0.3),
         models=models,
         min_objects=min_objects,
         max_objects=max_objects,
@@ -34,7 +34,7 @@ def generate_data(out, model_dir, random_state, connection_method, min_objects=4
         multi_instance=True,
         connection_method=connection_method,
         mesh_scale=((0.1,0.05,0.1),(0.20,0.20,0.20)),
-        n_trial=7,
+        n_trial=9,
     )
     pybullet.resetDebugVisualizerCamera(
         cameraDistance=1.5,
@@ -145,20 +145,22 @@ def main(out_dir, model_dir, n_video, n_processes, connection_method, min_object
        with open(os.path.join(root_dir, "max_n_objects.txt"), 'w') as fp:
            fp.write(str(max_objects))
 
-    def create(index):
+    def create(index,connection_method, min_objects, max_objects):
         scene_dir = root_dir / f'{index:08d}'
         random_state = np.random.RandomState(index)
 
         generate_data(scene_dir,
                       model_dir,
-                      random_state,
-                      connection_method,
+                      random_state=random_state,
+                      connection_method=connection_method,
                       min_objects=min_objects,
                       max_objects=max_objects)
 
     for index in range(0, n_video//n_processes):
         start = index * n_processes
-        processes = [multiprocessing.Process(target=create, args=(i,)) for i in
+        # if object number is variable, sample
+        n_objects = np.random.randint(min_objects, max_objects)
+        processes = [multiprocessing.Process(target=create, args=(i, connection_method, min_objects, n_objects)) for i in
                      range(start, start + n_processes)]
         [t.start() for t in processes]
         [t.join() for t in processes]
@@ -189,4 +191,5 @@ if __name__ == '__main__':
         connection_method = pybullet.DIRECT
 
     print(f"Generating {args.n_scenes} scenes at: {args.out_dir} \nUsing models from {args.model_dir} \n")
+
     main(args.out_dir, args.model_dir, args.n_scenes, args.n_processes, connection_method, args.min_objects, args.max_objects)
