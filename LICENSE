@@ -216,7 +216,12 @@ SCHEDULE 1
 
 The Software
 
-TODO
+The code was produced as part of the project SIMstack, A generative Shape and Instance Model for unordered
+object stacks. It provides the dataset generation pipeline for SuperQuadric shape and unordered pile generation on which
+SIMstack can be trained.
+
+Zoe Landgraf, Raluca Scona, Tristan Laidlow, Stephen James, Stefan Leutenegger, Andrew Davison. A generative Shape and
+Instance Model for unordered object stacks. (ICCV 2021)
 
 _________________________
 
@@ -224,3 +229,6 @@ Acknowledgments
 
 If you use the software, you should reference the following paper in any
 publication:
+
+Zoe Landgraf, Raluca Scona, Tristan Laidlow, Stephen James, Stefan Leutenegger, Andrew Davison. A generative Shape and
+Instance Model for unordered object stacks. (ICCV 2021)
