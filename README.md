@@ -1,7 +1,14 @@
 # SuperQuadric scene generator
-Generates scenes of cluttered SuperQuadric shapes. 
+
 ![title](examples/example_image.png)
 
+Dataset generation pipeline for the project:
+
+SIMstack: A Generative Shape and Instance Model for unordered object stacks (ICCV 2021)
+
+Zoe Landgraf, Raluca Scona, Tristan Laidlow, Stephen James, Stefan Leutenegger, Andrew Davison
+
+Visit the [project page](https://zoelandgraf.github.io/SIMstack/) for more details and link to the paper. 
 
 ### Installation
 create your virtual conda env from the environment.yml file
@@ -56,3 +63,8 @@ create your virtual conda env from the environment.yml file
 
     Setting per_instance_scene=True 
     in the optional arguments will generate a tsdf grid for every individual Superquadric.
+
+
+### Visualisation
+visualize a generated scene using the 'visualizer.py' script in DatasetCreation 
+Simply running the script will visualise the default scene in the examples folder.
